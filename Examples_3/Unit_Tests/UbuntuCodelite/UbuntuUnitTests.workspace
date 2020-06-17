@@ -3,7 +3,7 @@
   <Project Name="OS" Path="OSBase/OSBase.project" Active="No"/>
   <Project Name="Renderer" Path="Renderer/Renderer.project" Active="No"/>
   <Project Name="SpirVTools" Path="SpirVTools/SpirVTools.project" Active="No"/>
-  <Project Name="01_Transformation" Path="01_Transformation/01_Transformation.project" Active="No"/>
+  <Project Name="01_Transformation" Path="01_Transformation/01_Transformation.project" Active="Yes"/>
   <Project Name="02_Compute" Path="02_Compute/02_Compute.project" Active="No"/>
   <Project Name="03_MultiThread" Path="03_MultiThread/03_MultiThread.project" Active="No"/>
   <Project Name="04_ExecuteIndirect" Path="04_ExecuteIndirect/04_ExecuteIndirect.project" Active="No"/>
@@ -26,7 +26,7 @@
   <Project Name="25_AdditiveBlending" Path="25_AdditiveBlending/25_AdditiveBlending.project" Active="No"/>
   <Project Name="26_BakedPhysics" Path="26_BakedPhysics/26_BakedPhysics.project" Active="No"/>
   <Project Name="27_MultiThread" Path="27_MultiThread/27_MultiThread.project" Active="No"/>
-  <Project Name="28_Skinning" Path="28_Skinning/28_Skinning.project" Active="Yes"/>
+  <Project Name="28_Skinning" Path="28_Skinning/28_Skinning.project" Active="No"/>
   <Project Name="gainput" Path="../../../Common_3/ThirdParty/OpenSource/gainput/Ubuntu/lib/gainput.project" Active="No"/>
   <Project Name="LuaManager" Path="LuaManager/LuaManager.project" Active="No"/>
   <Project Name="ozz_base" Path="../../../Common_3/ThirdParty/OpenSource/ozz-animation/Ubuntu/ozz_base.project" Active="No"/>

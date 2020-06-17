@@ -95,7 +95,9 @@ enum
 
 // Raytracing
 #ifdef VK_NV_RAY_TRACING_SPEC_VERSION
-#define ENABLE_RAYTRACING
+//TODO - fix this
+//#define ENABLE_RAYTRACING
+#undef VK_NV_RAY_TRACING_SPEC_VERSION
 #endif
 #elif defined(DIRECT3D12)
 

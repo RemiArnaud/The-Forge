@@ -463,9 +463,13 @@ API_INTERFACE void FORGE_CALLCONV cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, ui
 API_INTERFACE void FORGE_CALLCONV cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
 // clang-format on
 
+#ifdef ENABLE_RAYTRACING
 //+1 for Acceleration Structure because it is not counted by VK_DESCRIPTOR_TYPE_RANGE_SIZE
 #define CONF_DESCRIPTOR_TYPE_RANGE_SIZE (VK_DESCRIPTOR_TYPE_RANGE_SIZE + 1)	
 static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_RANGE_SIZE;
+#else
+static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+#endif
 
 static void removeVirtualTexture(Renderer* pRenderer, VirtualTexture* pTexture);
 /************************************************************************/
@@ -2659,7 +2663,7 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 		vmaCreateAllocator(&createInfo, &pRenderer->pVmaAllocator);
 	}
 
-	VkDescriptorPoolSize descriptorPoolSizes[CONF_DESCRIPTOR_TYPE_RANGE_SIZE] =
+	VkDescriptorPoolSize descriptorPoolSizes[VK_DESCRIPTOR_TYPE_MAX_ENUM] =
 	{
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },

@@ -1,0 +1,23 @@
+language: c++
+
+arch:
+  - arm64
+  - amd64
+
+os:
+  - linux
+
+dist:
+  - bionic
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+  - sudo apt-get install -y build-essential curl xz-utils qemu-user
+  - sh .ci/cross-tool.sh
+
+script:
+  - make check
+  - sh .ci/cross-check.sh

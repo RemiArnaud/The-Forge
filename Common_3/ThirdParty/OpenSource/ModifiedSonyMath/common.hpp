@@ -93,6 +93,8 @@ inline Matrix4 makeShadowMatrix(const Vector4 & plane, const Vector4 & light)
 #if defined(TARGET_IOS)
 #elif defined(__ANDROID__)
 #elif defined(NN_NINTENDO_SDK)
+#elif defined(__ARM_NEON)
+#include "../../../ThirdParty/OpenSource/ModifiedSonyMath/neon/sse2neon.h"
 #else
 #include <immintrin.h>
 #endif

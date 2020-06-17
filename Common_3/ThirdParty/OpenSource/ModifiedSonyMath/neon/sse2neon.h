@@ -3,7 +3,7 @@
 
 // This header file provides a simple API translation layer
 // between SSE intrinsics to their corresponding ARM NEON versions
-//
+//vreinterpretq_s32_m128
 // Based on project:
 //	https://github.com/jratcliff63367/sse2neon
 //
@@ -55,7 +55,7 @@ typedef int32x4_t __m128i;
 	vreinterpretq_f32_f16(x)
 
 #define vreinterpretq_m128_f32(x) \
-	(x)
+	reinterpret_cast<__m128>(x)
 
 #define vreinterpretq_m128_f64(x) \
 	vreinterpretq_f32_f64(x)
@@ -91,7 +91,7 @@ typedef int32x4_t __m128i;
 	vreinterpretq_f16_f32(x)
 
 #define vreinterpretq_f32_m128(x) \
-	(x)
+	reinterpret_cast<int32x4_t>(x)
 
 #define vreinterpretq_f64_m128(x) \
 	vreinterpretq_f64_f32(x)
@@ -130,7 +130,10 @@ typedef int32x4_t __m128i;
 	vreinterpretq_s32_s16(x)
 
 #define vreinterpretq_m128i_s32(x) \
-	(x)
+	reinterpret_cast<__m128i>(x)
+    
+#define vreinterpretq_m128i_f32(x) \
+	reinterpret_cast<__m128i>(x)
 
 #define vreinterpretq_m128i_s64(x) \
 	vreinterpretq_s32_s64(x)
@@ -156,7 +159,7 @@ typedef int32x4_t __m128i;
 	vreinterpretq_s16_s32(x)
 
 #define vreinterpretq_s32_m128i(x) \
-	(x)
+	reinterpret_cast<int32x4_t>(x)
 
 #define vreinterpretq_s64_m128i(x) \
 	vreinterpretq_s64_s32(x)
@@ -206,7 +209,7 @@ typedef union ALIGN_STRUCT(16) SIMDVec
 // extracts the lower order floating point value from the parameter : https://msdn.microsoft.com/en-us/library/bb514059%28v=vs.120%29.aspx?f=255&MSPPError=-2147217396
 FORCE_INLINE float _mm_cvtss_f32(__m128 a)
 {
-	return vgetq_lane_f32(vreinterpretq_f32_m128(a), 0);
+	return vgetq_lane_f32(a, 0); 
 }
 
 // Sets the 128-bit value to zero https://msdn.microsoft.com/en-us/library/vstudio/ys7dw0kh(v=vs.100).aspx
@@ -298,13 +301,13 @@ FORCE_INLINE __m128i _mm_set_epi32(int i3, int i2, int i1, int i0)
 // Stores four single-precision, floating-point values. https://msdn.microsoft.com/en-us/library/vstudio/s3h4ay6y(v=vs.100).aspx
 FORCE_INLINE void _mm_store_ps(float *p, __m128 a)
 {
-	vst1q_f32(p, vreinterpretq_f32_m128(a));
+	vst1q_f32(p, a);
 }
 
 // Stores four single-precision, floating-point values. https://msdn.microsoft.com/en-us/library/44e30x22(v=vs.100).aspx
 FORCE_INLINE void _mm_storeu_ps(float *p, __m128 a)
 {
-	vst1q_f32(p, vreinterpretq_f32_m128(a));
+	vst1q_f32(p, a);
 }
 
 // Stores four 32-bit integer values as (as a __m128i value) at the address p. https://msdn.microsoft.com/en-us/library/vstudio/edk11s13(v=vs.100).aspx
@@ -322,7 +325,7 @@ FORCE_INLINE void _mm_storeu_si128(__m128i *p, __m128i a)
 // Stores the lower single - precision, floating - point value. https://msdn.microsoft.com/en-us/library/tzz10fbx(v=vs.100).aspx
 FORCE_INLINE void _mm_store_ss(float *p, __m128 a)
 {
-	vst1q_lane_f32(p, vreinterpretq_f32_m128(a), 0);
+	vst1q_lane_f32(p, a, 0);
 }
 
 // Reads the lower 64 bits of b and stores them into the lower 64 bits of a.  https://msdn.microsoft.com/en-us/library/hhwf428f%28v=vs.90%29.aspx
@@ -350,7 +353,7 @@ FORCE_INLINE __m128 _mm_loadl_pi(__m128 a, __m64* p)
 
 // Load 64-bit integer from memory into the first element of dst.
 FORCE_INLINE __m128 _mm_loadl_epi64(__m128i const *p) {
-	return vcombine_s32(vld1_s32((int32_t const *)p), vcreate_s32(0));
+	return vreinterpretq_m128_s32(vcombine_s32(vld1_s32((int32_t const *)p), vcreate_s32(0)));
 }
 
 // Load 2 single-precision (32-bit) floating-point elements from memory into the upper 2 elements of dst, and copy the lower 2 elements from a to dst.
@@ -391,7 +394,7 @@ FORCE_INLINE __m128 _mm_load_ss(const float * p)
 // Compares for inequality.  https://msdn.microsoft.com/en-us/library/sf44thbx(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmpneq_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32( vmvnq_u32( vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)) ) );
+	return vreinterpretq_m128_u32( vmvnq_u32( vceqq_f32(a, b) ) );
 }
 
 // Computes the bitwise AND-NOT of the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/68h7wd02(v=vs.100).aspx
@@ -464,8 +467,8 @@ FORCE_INLINE int _mm_movemask_ps(__m128 a)
 // Takes the lower 64 bits of b and places it into the high end of the result.
 FORCE_INLINE __m128 _mm_shuffle_ps_1032(__m128 a, __m128 b)
 {
-	float32x2_t a32 = vget_high_f32(vreinterpretq_f32_m128(a));
-	float32x2_t b10 = vget_low_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a32 = vget_high_f32(a);
+	float32x2_t b10 = vget_low_f32(b);
 	return vreinterpretq_m128_f32(vcombine_f32(a32, b10));
 }
 
@@ -473,114 +476,114 @@ FORCE_INLINE __m128 _mm_shuffle_ps_1032(__m128 a, __m128 b)
 // takes the higher two 32 bit values from b and swaps them and places in low end of result.
 FORCE_INLINE __m128 _mm_shuffle_ps_2301(__m128 a, __m128 b)
 {
-	float32x2_t a01 = vrev64_f32(vget_low_f32(vreinterpretq_f32_m128(a)));
-	float32x2_t b23 = vrev64_f32(vget_high_f32(vreinterpretq_f32_m128(b)));
+	float32x2_t a01 = vrev64_f32(vget_low_f32(a));
+	float32x2_t b23 = vrev64_f32(vget_high_f32(b));
 	return vreinterpretq_m128_f32(vcombine_f32(a01, b23));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_0321(__m128 a, __m128 b)
 {
-	float32x2_t a21 = vget_high_f32(vextq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a), 3));
-	float32x2_t b03 = vget_low_f32(vextq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b), 3));
+	float32x2_t a21 = vget_high_f32(vextq_f32(a, a, 3));
+	float32x2_t b03 = vget_low_f32(vextq_f32(b, b, 3));
 	return vreinterpretq_m128_f32(vcombine_f32(a21, b03));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_2103(__m128 a, __m128 b)
 {
-	float32x2_t a03 = vget_low_f32(vextq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a), 3));
-	float32x2_t b21 = vget_high_f32(vextq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b), 3));
+	float32x2_t a03 = vget_low_f32(vextq_f32(a, a, 3));
+	float32x2_t b21 = vget_high_f32(vextq_f32(b, b, 3));
 	return vreinterpretq_m128_f32(vcombine_f32(a03, b21));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_1010(__m128 a, __m128 b)
 {
-	float32x2_t a10 = vget_low_f32(vreinterpretq_f32_m128(a));
-	float32x2_t b10 = vget_low_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a10 = vget_low_f32(a);
+	float32x2_t b10 = vget_low_f32(b);
 	return vreinterpretq_m128_f32(vcombine_f32(a10, b10));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_1001(__m128 a, __m128 b)
 {
-	float32x2_t a01 = vrev64_f32(vget_low_f32(vreinterpretq_f32_m128(a)));
-	float32x2_t b10 = vget_low_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a01 = vrev64_f32(vget_low_f32(a));
+	float32x2_t b10 = vget_low_f32(b);
 	return vreinterpretq_m128_f32(vcombine_f32(a01, b10));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_0101(__m128 a, __m128 b)
 {
-	float32x2_t a01 = vrev64_f32(vget_low_f32(vreinterpretq_f32_m128(a)));
-	float32x2_t b01 = vrev64_f32(vget_low_f32(vreinterpretq_f32_m128(b)));
+	float32x2_t a01 = vrev64_f32(vget_low_f32(a));
+	float32x2_t b01 = vrev64_f32(vget_low_f32(b));
 	return vreinterpretq_m128_f32(vcombine_f32(a01, b01));
 }
 
 // keeps the low 64 bits of b in the low and puts the high 64 bits of a in the high
 FORCE_INLINE __m128 _mm_shuffle_ps_3210(__m128 a, __m128 b)
 {
-	float32x2_t a10 = vget_low_f32(vreinterpretq_f32_m128(a));
-	float32x2_t b32 = vget_high_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a10 = vget_low_f32(a);
+	float32x2_t b32 = vget_high_f32(b);
 	return vreinterpretq_m128_f32(vcombine_f32(a10, b32));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_0011(__m128 a, __m128 b)
 {
-	float32x2_t a11 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(a)), 1);
-	float32x2_t b00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t a11 = vdup_lane_f32(vget_low_f32(a), 1);
+	float32x2_t b00 = vdup_lane_f32(vget_low_f32(b), 0);
 	return vreinterpretq_m128_f32(vcombine_f32(a11, b00));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_0022(__m128 a, __m128 b)
 {
-	float32x2_t a22 = vdup_lane_f32(vget_high_f32(vreinterpretq_f32_m128(a)), 0);
-	float32x2_t b00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t a22 = vdup_lane_f32(vget_high_f32(a), 0);
+	float32x2_t b00 = vdup_lane_f32(vget_low_f32(b), 0);
 	return vreinterpretq_m128_f32(vcombine_f32(a22, b00));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_2200(__m128 a, __m128 b)
 {
-	float32x2_t a00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(a)), 0);
-	float32x2_t b22 = vdup_lane_f32(vget_high_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t a00 = vdup_lane_f32(vget_low_f32(a), 0);
+	float32x2_t b22 = vdup_lane_f32(vget_high_f32(b), 0);
 	return vreinterpretq_m128_f32(vcombine_f32(a00, b22));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_3202(__m128 a, __m128 b)
 {
-	float32_t a0 = vgetq_lane_f32(vreinterpretq_f32_m128(a), 0);
-	float32x2_t a22 = vdup_lane_f32(vget_high_f32(vreinterpretq_f32_m128(a)), 0);
+	float32_t a0 = vgetq_lane_f32(a, 0);
+	float32x2_t a22 = vdup_lane_f32(vget_high_f32(a), 0);
 	float32x2_t a02 = vset_lane_f32(a0, a22, 1); /* apoty: TODO: use vzip ?*/
-	float32x2_t b32 = vget_high_f32(vreinterpretq_f32_m128(b));
+	float32x2_t b32 = vget_high_f32(b);
 	return vreinterpretq_m128_f32(vcombine_f32(a02, b32));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_1133(__m128 a, __m128 b)
 {
-	float32x2_t a33 = vdup_lane_f32(vget_high_f32(vreinterpretq_f32_m128(a)), 1);
-	float32x2_t b11 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 1);
+	float32x2_t a33 = vdup_lane_f32(vget_high_f32(a), 1);
+	float32x2_t b11 = vdup_lane_f32(vget_low_f32(b), 1);
 	return vreinterpretq_m128_f32(vcombine_f32(a33, b11));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_2010(__m128 a, __m128 b)
 {
-	float32x2_t a10 = vget_low_f32(vreinterpretq_f32_m128(a));
-	float32_t b2 = vgetq_lane_f32(vreinterpretq_f32_m128(b), 2);
-	float32x2_t b00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t a10 = vget_low_f32(a);
+	float32_t b2 = vgetq_lane_f32(b, 2);
+	float32x2_t b00 = vdup_lane_f32(vget_low_f32(b), 0);
 	float32x2_t b20 = vset_lane_f32(b2, b00, 1);
 	return vreinterpretq_m128_f32(vcombine_f32(a10, b20));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_2001(__m128 a, __m128 b)
 {
-	float32x2_t a01 = vrev64_f32(vget_low_f32(vreinterpretq_f32_m128(a)));
+	float32x2_t a01 = vrev64_f32(vget_low_f32(a));
 	float32_t b2 = vgetq_lane_f32(b, 2);
-	float32x2_t b00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t b00 = vdup_lane_f32(vget_low_f32(b), 0);
 	float32x2_t b20 = vset_lane_f32(b2, b00, 1);
 	return vreinterpretq_m128_f32(vcombine_f32(a01, b20));
 }
 
 FORCE_INLINE __m128 _mm_shuffle_ps_2032(__m128 a, __m128 b)
 {
-	float32x2_t a32 = vget_high_f32(vreinterpretq_f32_m128(a));
+	float32x2_t a32 = vget_high_f32(a);
 	float32_t b2 = vgetq_lane_f32(b, 2);
-	float32x2_t b00 = vdup_lane_f32(vget_low_f32(vreinterpretq_f32_m128(b)), 0);
+	float32x2_t b00 = vdup_lane_f32(vget_low_f32(b), 0);
 	float32x2_t b20 = vset_lane_f32(b2, b00, 1);
 	return vreinterpretq_m128_f32(vcombine_f32(a32, b20));
 }
@@ -604,10 +607,10 @@ FORCE_INLINE __m128 _mm_shuffle_ps_default(__m128 a, __m128 b, __constrange(0,25
 #define _mm_shuffle_ps_default(a, b, imm) \
 ({ \
 	float32x4_t ret; \
-	ret = vmovq_n_f32(vgetq_lane_f32(vreinterpretq_f32_m128(a), (imm) & 0x3)); \
-	ret = vsetq_lane_f32(vgetq_lane_f32(vreinterpretq_f32_m128(a), ((imm) >> 2) & 0x3), ret, 1); \
-	ret = vsetq_lane_f32(vgetq_lane_f32(vreinterpretq_f32_m128(b), ((imm) >> 4) & 0x3), ret, 2); \
-	ret = vsetq_lane_f32(vgetq_lane_f32(vreinterpretq_f32_m128(b), ((imm) >> 6) & 0x3), ret, 3); \
+	ret = vmovq_n_f32(vgetq_lane_f32(a, (imm) & 0x3)); \
+	ret = vsetq_lane_f32(vgetq_lane_f32(a, ((imm) >> 2) & 0x3), ret, 1); \
+	ret = vsetq_lane_f32(vgetq_lane_f32(b, ((imm) >> 4) & 0x3), ret, 2); \
+	ret = vsetq_lane_f32(vgetq_lane_f32(b, ((imm) >> 6) & 0x3), ret, 3); \
 	vreinterpretq_m128_f32(ret); \
 })
 #endif
@@ -758,21 +761,21 @@ FORCE_INLINE __m128i _mm_shuffle_epi32_default(__m128i a, __constrange(0,255) in
 	__m128i ret; \
 	switch (imm) \
 	{ \
-		case _MM_SHUFFLE(1, 0, 3, 2): ret = _mm_shuffle_epi_1032((a)); break; \
-		case _MM_SHUFFLE(2, 3, 0, 1): ret = _mm_shuffle_epi_2301((a)); break; \
-		case _MM_SHUFFLE(0, 3, 2, 1): ret = _mm_shuffle_epi_0321((a)); break; \
-		case _MM_SHUFFLE(2, 1, 0, 3): ret = _mm_shuffle_epi_2103((a)); break; \
-		case _MM_SHUFFLE(1, 0, 1, 0): ret = _mm_shuffle_epi_1010((a)); break; \
-		case _MM_SHUFFLE(1, 0, 0, 1): ret = _mm_shuffle_epi_1001((a)); break; \
-		case _MM_SHUFFLE(0, 1, 0, 1): ret = _mm_shuffle_epi_0101((a)); break; \
-		case _MM_SHUFFLE(2, 2, 1, 1): ret = _mm_shuffle_epi_2211((a)); break; \
-		case _MM_SHUFFLE(0, 1, 2, 2): ret = _mm_shuffle_epi_0122((a)); break; \
-		case _MM_SHUFFLE(3, 3, 3, 2): ret = _mm_shuffle_epi_3332((a)); break; \
-		case _MM_SHUFFLE(0, 0, 0, 0): ret = _mm_shuffle_epi32_splat((a),0); break; \
-		case _MM_SHUFFLE(1, 1, 1, 1): ret = _mm_shuffle_epi32_splat((a),1); break; \
-		case _MM_SHUFFLE(2, 2, 2, 2): ret = _mm_shuffle_epi32_splat((a),2); break; \
-		case _MM_SHUFFLE(3, 3, 3, 3): ret = _mm_shuffle_epi32_splat((a),3); break; \
-		default: ret = _mm_shuffle_epi32_default((a), (imm)); break; \
+		case _MM_SHUFFLE(1, 0, 3, 2): ret = _mm_shuffle_epi_1032(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(2, 3, 0, 1): ret = _mm_shuffle_epi_2301(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(0, 3, 2, 1): ret = _mm_shuffle_epi_0321(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(2, 1, 0, 3): ret = _mm_shuffle_epi_2103(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(1, 0, 1, 0): ret = _mm_shuffle_epi_1010(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(1, 0, 0, 1): ret = _mm_shuffle_epi_1001(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(0, 1, 0, 1): ret = _mm_shuffle_epi_0101(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(2, 2, 1, 1): ret = _mm_shuffle_epi_2211(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(0, 1, 2, 2): ret = _mm_shuffle_epi_0122(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(3, 3, 3, 2): ret = _mm_shuffle_epi_3332(reinterpret_cast<__m128i>(a)); break; \
+		case _MM_SHUFFLE(0, 0, 0, 0): ret = _mm_shuffle_epi32_splat(reinterpret_cast<__m128i>(a),0); break; \
+		case _MM_SHUFFLE(1, 1, 1, 1): ret = _mm_shuffle_epi32_splat(reinterpret_cast<__m128i>(a),1); break; \
+		case _MM_SHUFFLE(2, 2, 2, 2): ret = _mm_shuffle_epi32_splat(reinterpret_cast<__m128i>(a),2); break; \
+		case _MM_SHUFFLE(3, 3, 3, 3): ret = _mm_shuffle_epi32_splat(reinterpret_cast<__m128i>(a),3); break; \
+		default: ret = _mm_shuffle_epi32_default(reinterpret_cast<__m128i>(a), (imm)); break; \
 	} \
 	ret; \
 })
@@ -956,7 +959,7 @@ FORCE_INLINE int _mm_movemask_epi8(__m128i _a)
 // Subtracts the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/1zad2k61(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_sub_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_f32(vsubq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_f32(vsubq_f32(a, b));
 }
 
 // Subtract the lower single-precision (32-bit) floating-point element in b from the lower single-precision (32-bit) floating-point element in a,
@@ -969,7 +972,7 @@ FORCE_INLINE __m128 _mm_sub_ss(__m128 a, __m128 b)
 // Subtracts the 4 signed or unsigned 32-bit integers of b from the 4 signed or unsigned 32-bit integers of a. https://msdn.microsoft.com/en-us/library/vstudio/fhh866h0(v=vs.100).aspx
 FORCE_INLINE __m128i _mm_sub_epi32(__m128i a, __m128i b)
 {
-	return vreinterpretq_m128_f32(vsubq_s32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128i_f32(vsubq_s32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
 }
 
 FORCE_INLINE __m128i _mm_sub_epi16(__m128i a, __m128i b)
@@ -997,13 +1000,13 @@ FORCE_INLINE __m128i _mm_subs_epu8(__m128i a, __m128i b)
 // Adds the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/c9848chc(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_add_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_f32(vaddq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_f32(vaddq_f32(a, b));
 }
 
 // adds the scalar single-precision floating point values of a and b.  https://msdn.microsoft.com/en-us/library/be94x2y6(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_add_ss(__m128 a, __m128 b)
 {
-	float32_t b0 = vgetq_lane_f32(vreinterpretq_f32_m128(b), 0);
+	float32_t b0 = vgetq_lane_f32(b, 0);
 	float32x4_t value = vsetq_lane_f32(b0, vdupq_n_f32(0), 0);
 	//the upper values in the result must be the remnants of <a>.
 	return vreinterpretq_m128_f32(vaddq_f32(a, value));
@@ -1055,7 +1058,7 @@ FORCE_INLINE __m128i _mm_mullo_epi32(__m128i a, __m128i b)
 // Multiplies the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/22kbk6t9(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_mul_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_f32(vmulq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_f32(vmulq_f32(a, b));
 }
 
 // Multiply the lower single-precision (32-bit) floating-point element in a and b, store the result in the lower element of dst, and copy the upper 3 packed elements from a to the upper elements of dst
@@ -1070,10 +1073,10 @@ FORCE_INLINE __m128 _mm_mul_ss(__m128 a, __m128 b)
 FORCE_INLINE __m128 recipq_newton(__m128 in, int n)
 {
 	int i;
-	float32x4_t recip = vrecpeq_f32(vreinterpretq_f32_m128(in));
+	float32x4_t recip = vrecpeq_f32(in);
 	for (i = 0; i < n; ++i)
 	{
-		recip = vmulq_f32(recip, vrecpsq_f32(recip, vreinterpretq_f32_m128(in)));
+		recip = vmulq_f32(recip, vrecpsq_f32(recip, in));
 	}
 	return vreinterpretq_m128_f32(recip);
 }
@@ -1147,27 +1150,27 @@ FORCE_INLINE __m128 _mm_sqrt_ss(__m128 in)
 // Computes the maximums of the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/ff5d607a(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_max_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_f32(vmaxq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_f32(vmaxq_f32(a, b));
 }
 
 // Computes the minima of the four single-precision, floating-point values of a and b. https://msdn.microsoft.com/en-us/library/vstudio/wh13kadz(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_min_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_f32(vminq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_f32(vminq_f32(a, b));
 }
 
 // Computes the maximum of the two lower scalar single-precision floating point values of a and b.  https://msdn.microsoft.com/en-us/library/s6db5esz(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_max_ss(__m128 a, __m128 b)
 {
-	float32_t value = vgetq_lane_f32(vmaxq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	return vreinterpretq_m128_f32(vsetq_lane_f32(value, vreinterpretq_f32_m128(a), 0));
+	float32_t value = vgetq_lane_f32(vmaxq_f32(a, b), 0);
+	return vreinterpretq_m128_f32(vsetq_lane_f32(value, a, 0));
 }
 
 // Computes the minimum of the two lower scalar single-precision floating point values of a and b.  https://msdn.microsoft.com/en-us/library/0a9y7xaa(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_min_ss(__m128 a, __m128 b)
 {
-	float32_t value = vgetq_lane_f32(vminq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	return vreinterpretq_m128_f32(vsetq_lane_f32(value, vreinterpretq_f32_m128(a), 0));
+	float32_t value = vgetq_lane_f32(vminq_f32(a, b), 0);
+	return vreinterpretq_m128_f32(vsetq_lane_f32(value, a, 0));
 }
 
 //Computes the pairwise maxima of the 16 unsigned 8-bit integers from a and the 16 unsigned 8-bit integers from b. https://msdn.microsoft.com/en-us/library/st6634za(v=vs.100).aspx
@@ -1230,7 +1233,7 @@ FORCE_INLINE __m128i _mm_mulhi_epi16(__m128i a, __m128i b)
 FORCE_INLINE __m128 _mm_hadd_ps(__m128 a, __m128 b ) 
 {
 #if defined(__aarch64__)
-	return vreinterpretq_m128_f32(vpaddq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b))); //AArch64
+	return vreinterpretq_m128_f32(vpaddq_f32(a, b)); //AArch64
 #else
 	float32x2_t a10 = vget_low_f32(vreinterpretq_f32_m128(a));
 	float32x2_t a32 = vget_high_f32(vreinterpretq_f32_m128(a));
@@ -1247,29 +1250,29 @@ FORCE_INLINE __m128 _mm_hadd_ps(__m128 a, __m128 b )
 // Compares for less than https://msdn.microsoft.com/en-us/library/vstudio/f330yhc8(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmplt_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32(vcltq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_u32(vcltq_f32(a, b));
 }
 
 FORCE_INLINE __m128 _mm_cmplt_ss(__m128 a, __m128 b)
 {
-	return vsetq_lane_f32(vgetq_lane_f32(_mm_cmplt_ps(a, b), 0), vreinterpretq_f32_m128(a), 0);
+	return vsetq_lane_f32(vgetq_lane_f32(_mm_cmplt_ps(a, b), 0), a, 0);
 }
 
 // Compares for greater than. https://msdn.microsoft.com/en-us/library/vstudio/11dy102s(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmpgt_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32(vcgtq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_u32(vcgtq_f32(a, b));
 }
 
 FORCE_INLINE __m128 _mm_cmpgt_ss(__m128 a, __m128 b)
 {
-	return vsetq_lane_f32(vgetq_lane_f32(_mm_cmpgt_ps(a, b), 0), vreinterpretq_f32_m128(a), 0);
+	return vsetq_lane_f32(vgetq_lane_f32(_mm_cmpgt_ps(a, b), 0), a, 0);
 }
 
 // Compares for greater than or equal. https://msdn.microsoft.com/en-us/library/vstudio/fs813y2t(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmpge_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32(vcgeq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_u32(vcgeq_f32(a, b));
 }
 
 FORCE_INLINE __m128 _mm_cmpge_ss(__m128 a, __m128 b)
@@ -1281,7 +1284,7 @@ FORCE_INLINE __m128 _mm_cmpge_ss(__m128 a, __m128 b)
 // Compares for less than or equal. https://msdn.microsoft.com/en-us/library/vstudio/1s75w83z(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmple_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32(vcleq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_u32(vcleq_f32(a, b));
 }
 
 // Compare the lower single-precision (32-bit) floating-point elements in a and b for less-than-or-equal, store the result in the lower element of dst, and copy the upper 3 packed elements from a to the upper elements of dst.
@@ -1293,13 +1296,13 @@ FORCE_INLINE __m128 _mm_cmple_ss(__m128 a, __m128 b)
 // Compares for equality. https://msdn.microsoft.com/en-us/library/vstudio/36aectz5(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmpeq_ps(__m128 a, __m128 b)
 {
-	return vreinterpretq_m128_u32(vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	return vreinterpretq_m128_u32(vceqq_f32(a, b));
 }
 
 FORCE_INLINE __m128 _mm_cmpeq_ss(__m128 a, __m128 b)
 {
-	float32_t value = vgetq_lane_f32(vreinterpretq_f32_m128(_mm_cmpeq_ps(a, b)), 0);
-	return vreinterpretq_m128_f32(vsetq_lane_f32(value, vreinterpretq_f32_m128(a), 0));
+	float32_t value = vgetq_lane_f32(_mm_cmpeq_ps(a, b), 0);
+	return vreinterpretq_m128_f32(vsetq_lane_f32(value, a, 0));
 }
 
 //Compares the 16 signed or unsigned 8-bit integers in a and the 16 signed or unsigned 8-bit integers in b for equality. https://msdn.microsoft.com/en-us/library/windows/desktop/bz5xk21a(v=vs.90).aspx
@@ -1361,8 +1364,8 @@ FORCE_INLINE __m128 _mm_cmpord_ps(__m128 a, __m128 b )
 	// Note: NEON does not have ordered compare builtin
 	// Need to compare a eq a and b eq b to check for NaN
 	// Do AND of results to get final
-	uint32x4_t ceqaa = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t ceqbb = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t ceqaa = vceqq_f32(a, a);
+	uint32x4_t ceqbb = vceqq_f32(b, b);
 	return vreinterpretq_m128_u32(vandq_u32(ceqaa, ceqbb));
 }
 
@@ -1370,10 +1373,10 @@ FORCE_INLINE __m128 _mm_cmpord_ps(__m128 a, __m128 b )
 // Important note!! The documentation on MSDN is incorrect!  If either of the values is a NAN the docs say you will get a one, but in fact, it will return a zero!!
 FORCE_INLINE int _mm_comilt_ss(__m128 a, __m128 b)
 {
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_or_b_nan = vmvnq_u32(vandq_u32(a_not_nan, b_not_nan));
-	uint32x4_t a_lt_b = vcltq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b));
+	uint32x4_t a_lt_b = vcltq_f32(a, b);
 	return (vgetq_lane_u32(vorrq_u32(a_or_b_nan, a_lt_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1381,10 +1384,10 @@ FORCE_INLINE int _mm_comilt_ss(__m128 a, __m128 b)
 FORCE_INLINE int _mm_comigt_ss(__m128 a, __m128 b)
 {
 	//return vgetq_lane_u32(vcgtq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_and_b_not_nan = vandq_u32(a_not_nan, b_not_nan);
-	uint32x4_t a_gt_b = vcgtq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b));
+	uint32x4_t a_gt_b = vcgtq_f32(a, b);
 	return (vgetq_lane_u32(vandq_u32(a_and_b_not_nan, a_gt_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1392,10 +1395,10 @@ FORCE_INLINE int _mm_comigt_ss(__m128 a, __m128 b)
 FORCE_INLINE int _mm_comile_ss(__m128 a, __m128 b)
 {
 	//return vgetq_lane_u32(vcleq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_or_b_nan = vmvnq_u32(vandq_u32(a_not_nan, b_not_nan));
-	uint32x4_t a_le_b = vcleq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b));
+	uint32x4_t a_le_b = vcleq_f32(a, b);
 	return (vgetq_lane_u32(vorrq_u32(a_or_b_nan, a_le_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1403,10 +1406,10 @@ FORCE_INLINE int _mm_comile_ss(__m128 a, __m128 b)
 FORCE_INLINE int _mm_comige_ss(__m128 a, __m128 b)
 {
 	//return vgetq_lane_u32(vcgeq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_and_b_not_nan = vandq_u32(a_not_nan, b_not_nan);
-	uint32x4_t a_ge_b = vcgeq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b));
+	uint32x4_t a_ge_b = vcgeq_f32(a, b);
 	return (vgetq_lane_u32(vandq_u32(a_and_b_not_nan, a_ge_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1414,10 +1417,10 @@ FORCE_INLINE int _mm_comige_ss(__m128 a, __m128 b)
 FORCE_INLINE int _mm_comieq_ss(__m128 a, __m128 b)
 {
 	//return vgetq_lane_u32(vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_or_b_nan = vmvnq_u32(vandq_u32(a_not_nan, b_not_nan));
-	uint32x4_t a_eq_b = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b));
+	uint32x4_t a_eq_b = vceqq_f32(a, b);
 	return (vgetq_lane_u32(vorrq_u32(a_or_b_nan, a_eq_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1425,10 +1428,10 @@ FORCE_INLINE int _mm_comieq_ss(__m128 a, __m128 b)
 FORCE_INLINE int _mm_comineq_ss(__m128 a, __m128 b)
 {
 	//return !vgetq_lane_u32(vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)), 0);
-	uint32x4_t a_not_nan = vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(a));
-	uint32x4_t b_not_nan = vceqq_f32(vreinterpretq_f32_m128(b), vreinterpretq_f32_m128(b));
+	uint32x4_t a_not_nan = vceqq_f32(a, a);
+	uint32x4_t b_not_nan = vceqq_f32(b, b);
 	uint32x4_t a_and_b_not_nan = vandq_u32(a_not_nan, b_not_nan);
-	uint32x4_t a_neq_b = vmvnq_u32(vceqq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
+	uint32x4_t a_neq_b = vmvnq_u32(vceqq_f32(a, b));
 	return (vgetq_lane_u32(vandq_u32(a_and_b_not_nan, a_neq_b), 0) != 0) ? 1 : 0;
 }
 
@@ -1447,7 +1450,7 @@ FORCE_INLINE int _mm_comineq_ss(__m128 a, __m128 b)
 // Converts the four single-precision, floating-point values of a to signed 32-bit integer values using truncate. https://msdn.microsoft.com/en-us/library/vstudio/1h005y6x(v=vs.100).aspx
 FORCE_INLINE __m128i _mm_cvttps_epi32(__m128 a)
 {
-	return vreinterpretq_m128i_s32(vcvtq_s32_f32(vreinterpretq_f32_m128(a)));
+	return vreinterpretq_m128i_s32(vcvtq_s32_f32(a));
 }
 
 // Converts the four signed 32-bit integer values of a to single-precision, floating-point values https://msdn.microsoft.com/en-us/library/vstudio/36bwxcx5(v=vs.100).aspx
@@ -1581,8 +1584,8 @@ FORCE_INLINE __m128i _mm_unpacklo_epi32(__m128i a, __m128i b)
 // Selects and interleaves the lower two single-precision, floating-point values from a and b. https://msdn.microsoft.com/en-us/library/25st103b%28v=vs.90%29.aspx
 FORCE_INLINE __m128 _mm_unpacklo_ps(__m128 a, __m128 b)
 {
-	float32x2_t a1 = vget_low_f32(vreinterpretq_f32_m128(a));
-	float32x2_t b1 = vget_low_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a1 = vget_low_f32(a);
+	float32x2_t b1 = vget_low_f32(b);
 	float32x2x2_t result = vzip_f32(a1, b1);
 	return vreinterpretq_m128_f32(vcombine_f32(result.val[0], result.val[1]));
 }
@@ -1590,8 +1593,8 @@ FORCE_INLINE __m128 _mm_unpacklo_ps(__m128 a, __m128 b)
 // Selects and interleaves the upper two single-precision, floating-point values from a and b. https://msdn.microsoft.com/en-us/library/skccxx7d%28v=vs.90%29.aspx
 FORCE_INLINE __m128 _mm_unpackhi_ps(__m128 a, __m128 b)
 {
-	float32x2_t a1 = vget_high_f32(vreinterpretq_f32_m128(a));
-	float32x2_t b1 = vget_high_f32(vreinterpretq_f32_m128(b));
+	float32x2_t a1 = vget_high_f32(a);
+	float32x2_t b1 = vget_high_f32(b);
 	float32x2x2_t result = vzip_f32(a1, b1);
 	return vreinterpretq_m128_f32(vcombine_f32(result.val[0], result.val[1]));
 }
@@ -1668,7 +1671,7 @@ FORCE_INLINE void _mm_clflush(void const*p)
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_blendv_ps&expand=5217,3606,3720,5595,3828,3847,3857,2178,450
 FORCE_INLINE __m128 _mm_blendv_ps(__m128 a, __m128 b, __m128 mask) 
 {
-	return vreinterpretq_m128_s32(vbslq_s32(vreinterpretq_s32_m128(mask), vreinterpretq_s32_m128(b), vreinterpretq_s32_m128(a)));
+	return vreinterpretq_m128_s32(vbslq_s32(vreinterpretq_u32_m128(mask), vreinterpretq_s32_m128(b), vreinterpretq_s32_m128(a)));
 }
 
 // Conditionally multiply the packed single-precision (32-bit) floating-point elements in a and b using the high 4 bits in imm8, sum the four products, and conditionally store the sum in dst using the low 4 bits of imm8.
@@ -1695,28 +1698,46 @@ FORCE_INLINE __m128 _mm_movehl_ps(__m128 a, __m128 b) {
 // Move the lower single-precision (32-bit) floating-point element from b to the lower element of dst, and copy the upper 3 elements from a to the upper elements of dst.
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_move_ss&expand=5217,3606,3720,5595,3828
 FORCE_INLINE __m128 _mm_move_ss(__m128 a, __m128 b) {
+#ifdef __clang__
 	return __builtin_shufflevector(b, a, 0, 5, 6, 7);
+#else
+    int32x4_t rs;
+ /*   
+    rs[0] = (0 < 4 ? a[0] : b[0 - 4]);
+    rs[1] = (5 < 4 ? a[5] : b[5 - 4]);
+    rs[2] = (6 < 4 ? a[6] : b[6 - 4]);
+    rs[3] = (7 < 4 ? a[7] : b[7 - 4]);
+ */
+ 
+    rs[0] = a[0];
+    rs[1] = b[1];
+    rs[2] = b[2];
+    rs[3] = b[3];
+ 
+    
+    return vreinterpretq_m128_s32(rs);
+#endif
 }
 
 // Negate packed 32-bit integers in a when the corresponding signed 32-bit integer in b is negative, and store the results in dst. Element in dst are zeroed out when the corresponding element in b is zero.
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_sign_epi32&expand=5217
 FORCE_INLINE __m128i _mm_sign_epi32(__m128i a, __m128i b) {
-	__m128i c1 = vcgtq_s32(b, _mm_setzero_si128());
+	__m128i c1 = vreinterpretq_m128i_u32(vcgtq_s32(b, _mm_setzero_si128()));
 	__m128i ret = vandq_s32(a, c1);
-	__m128i c2 = vcltq_s32(b, _mm_setzero_si128());
+	__m128i c2 = vreinterpretq_m128i_u32(vcltq_s32(b, _mm_setzero_si128()));
 	return vaddq_s32(ret, vsubq_s32(_mm_setzero_si128(), vandq_s32(a, c2)));
 }
 
 // Compare packed unsigned 32-bit integers in a and b, and store packed maximum values in dst.
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_max_epu32&expand=5217,3606
 FORCE_INLINE __m128i _mm_max_epu32(__m128i a, __m128i b) {
-	return vmaxq_u32(a, b);
+	return vreinterpretq_m128i_u32(vmaxq_u32(vreinterpretq_u32_m128i(a), vreinterpretq_u32_m128i(b)));
 }
 
 // Compare packed unsigned 32-bit integers in a and b, and store packed minimum values in dst.
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_max_epu32&expand=5217,3606
 FORCE_INLINE __m128i _mm_min_epu32(__m128i a, __m128i b) {
-	return vminq_u32(a, b);
+	return vreinterpretq_m128i_u32(vminq_u32(vreinterpretq_u32_m128i(a), vreinterpretq_u32_m128i(b)));
 }
 
 // Store the lower single-precision (32-bit) floating-point element from a into 4 contiguous elements in memory. mem_addr must be aligned on a 16-byte boundary or a general-protection exception may be generated.

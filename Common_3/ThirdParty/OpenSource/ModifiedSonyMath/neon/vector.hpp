@@ -1644,45 +1644,45 @@ inline Vector4Int LoadXPtr(const int* _i) {
 }
 
 inline Vector4Int Load1Ptr(const int* _i) {
-  return _mm_shuffle_epi32(
+  return reinterpret_cast<Vector4Int>(_mm_shuffle_epi32(
       _mm_loadl_epi64(reinterpret_cast<const __m128i*>(_i)),
-      _MM_SHUFFLE(0, 0, 0, 0));
+      _MM_SHUFFLE(0, 0, 0, 0)));
 }
 
 inline Vector4Int Load2Ptr(const int* _i) {
-  return _mm_loadl_epi64(reinterpret_cast<const __m128i*>(_i));
+  return reinterpret_cast<Vector4Int>(_mm_loadl_epi64(reinterpret_cast<const __m128i*>(_i)));
 }
 
 inline Vector4Int Load3Ptr(const int* _i) {
-  return _mm_set_epi32(0, _i[2], _i[1], _i[0]);
+  return reinterpret_cast<Vector4Int>(_mm_set_epi32(0, _i[2], _i[1], _i[0]));
 }
 
 inline Vector4Int LoadPtrU(const int* _i) {
-  return _mm_loadu_si128(reinterpret_cast<const __m128i*>(_i));
+  return reinterpret_cast<Vector4Int>(_mm_loadu_si128(reinterpret_cast<const __m128i*>(_i)));
 }
 
 inline Vector4Int LoadXPtrU(const int* _i) {
-  return _mm_cvtsi32_si128(*_i);
+  return reinterpret_cast<Vector4Int>(_mm_cvtsi32_si128(*_i));
 }
 
 inline Vector4Int Load1PtrU(const int* _i) {
-  return _mm_set1_epi32(*_i);
+  return reinterpret_cast<Vector4Int>(_mm_set1_epi32(*_i));
 }
 
 inline Vector4Int Load2PtrU(const int* _i) {
-  return _mm_set_epi32(0, 0, _i[1], _i[0]);
+  return reinterpret_cast<Vector4Int>(_mm_set_epi32(0, 0, _i[1], _i[0]));
 }
 
 inline Vector4Int Load3PtrU(const int* _i) {
-  return _mm_set_epi32(0, _i[2], _i[1], _i[0]);
+  return reinterpret_cast<Vector4Int>(_mm_set_epi32(0, _i[2], _i[1], _i[0]));
 }
 
 inline Vector4Int FromFloatRound(const Vector4& _f) {
-  return _mm_cvtps_epi32(_f.get128());
+  return reinterpret_cast<Vector4Int>(_mm_cvtps_epi32(_f.get128()));
 }
 
 inline Vector4Int FromFloatTrunc(const Vector4& _f) {
-  return _mm_cvttps_epi32(_f.get128());
+  return reinterpret_cast<Vector4Int>(_mm_cvttps_epi32(_f.get128()));
 }
 }  // namespace vector4int
 

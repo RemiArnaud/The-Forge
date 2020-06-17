@@ -147,7 +147,8 @@ public:
         
 		// window and renderer setup
 		RendererDesc settings = { 0 };
-		initRenderer(GetName(), &settings, &pRenderer);
+        const char* name = GetName();
+		initRenderer(name, &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)
 			return false;

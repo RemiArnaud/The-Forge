@@ -737,7 +737,7 @@ void addRaytracingPipelineImpl(const RaytracingPipelineDesc* pDesc, Pipeline** p
 		VkRayTracingShaderGroupCreateInfoNV groupInfo;
 		groupInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
 		groupInfo.pNext = nullptr;
-		groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_MAX_ENUM_NV;
+		groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_MAX_ENUM_KHR;
 
 		for (uint32_t i = 0; i < pDesc->mHitGroupCount; ++i)
 		{
