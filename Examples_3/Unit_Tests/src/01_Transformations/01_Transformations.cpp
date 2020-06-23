@@ -45,6 +45,8 @@
 
 #include "../../../../Common_3/OS/Interfaces/IMemory.h"
 
+#include <sys/resource.h>
+
 /// Demo structures
 struct PlanetInfoStruct
 {
@@ -128,6 +130,7 @@ TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 class Transformations: public IApp
 {
 public:
+
 	bool Init()
 	{
         // FILE PATHS
@@ -148,6 +151,7 @@ public:
 		// window and renderer setup
 		RendererDesc settings = { 0 };
         const char* name = GetName();
+
 		initRenderer(name, &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)

@@ -693,7 +693,7 @@ FileStream* fsOpenFile(const Path* filePath, FileMode mode)
 
 bool fsFileSystemIsReadOnly(const FileSystem* fileSystem) 
 { 
-	if (!fileSystem) { return NULL; }
+	if (!fileSystem) { return false; }
 	return fileSystem->IsReadOnly(); 
 }
 

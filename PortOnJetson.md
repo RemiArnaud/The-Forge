@@ -29,5 +29,14 @@ cd The-Forge/Examples_3/Unit_Tests/UbuntuCodelite
 codelite &
  (open UbuntuUnitTests.workspace)
 
+# update cmake
+sudo apt remove --purge --auto-remove cmake
+sudo apt-get install libssl-dev
+https://cmake.org/download/
+cd cmake-3.17.3
+./bootstrap
+make -j4
+sudo make install
+
 
 

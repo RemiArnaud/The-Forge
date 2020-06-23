@@ -1000,7 +1000,7 @@ void	*mmgrAllocator(const char *sourceFile, const unsigned int sourceLine, const
 #ifndef RANDOM_FAILURE
 		// If you hit this assert, then the requested allocation simply failed (you're out of memory.) Interrogate the
 		// variable 'au' or the stack frame to see what you were trying to do.
-		m_assert(au->actualAddress != NULL);
+	//	m_assert(au->actualAddress != NULL);
 #endif
 
 		if (au->actualAddress == NULL)

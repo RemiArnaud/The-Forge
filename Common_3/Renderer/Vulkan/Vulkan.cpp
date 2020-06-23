@@ -35,7 +35,7 @@
 // Debug Utils Extension is still WIP and does not work with all Validation Layers
 // Disable this to use the old debug report and debug marker extensions
 // Debug Utils requires the Nightly Build of RenderDoc
-//#define USE_DEBUG_UTILS_EXTENSION
+#define USE_DEBUG_UTILS_EXTENSION
 /************************************************************************/
 /************************************************************************/
 #if defined(_WIN32)
@@ -309,7 +309,7 @@ const char* gVkWantedInstanceExtensions[] =
 #else
 	VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #endif
-	VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+	VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
 	// To legally use HDR formats
 	VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME,
 	/************************************************************************/
@@ -462,14 +462,6 @@ API_INTERFACE void FORGE_CALLCONV unmapBuffer(Renderer* pRenderer, Buffer* pBuff
 API_INTERFACE void FORGE_CALLCONV cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
 API_INTERFACE void FORGE_CALLCONV cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
 // clang-format on
-
-#ifdef ENABLE_RAYTRACING
-//+1 for Acceleration Structure because it is not counted by VK_DESCRIPTOR_TYPE_RANGE_SIZE
-#define CONF_DESCRIPTOR_TYPE_RANGE_SIZE (VK_DESCRIPTOR_TYPE_RANGE_SIZE + 1)	
-static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_RANGE_SIZE;
-#else
-static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-#endif
 
 static void removeVirtualTexture(Renderer* pRenderer, VirtualTexture* pTexture);
 /************************************************************************/
@@ -1813,8 +1805,10 @@ void CreateInstance(const char* app_name,
 
 	uint32_t              layerCount = 0;
 	uint32_t              extCount = 0;
-	vkEnumerateInstanceLayerProperties(&layerCount, NULL);
-	vkEnumerateInstanceExtensionProperties(NULL, &extCount, NULL);
+	VkResult result = vkEnumerateInstanceLayerProperties(&layerCount, NULL);
+    ASSERT (result == VK_SUCCESS) ;
+	result = vkEnumerateInstanceExtensionProperties(NULL, &extCount, NULL);
+    ASSERT (result == VK_SUCCESS) ;
 
 	VkLayerProperties*    layers = (VkLayerProperties*)alloca(sizeof(VkLayerProperties) * layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, layers);
@@ -1996,7 +1990,7 @@ void CreateInstance(const char* app_name,
 			create_info.flags = 0;
 			create_info.pUserData = NULL;
 			VkResult res = vkCreateDebugUtilsMessengerEXT(pRenderer->pVkInstance, &create_info, NULL, &(pRenderer->pVkDebugUtilsMessenger));
-			if (VK_SUCCESS != res)
+            if (VK_SUCCESS != res)
 			{
 				internal_log(
 							 LOG_TYPE_ERROR, "vkCreateDebugUtilsMessengerEXT failed - disabling Vulkan debug callbacks",
@@ -2511,7 +2505,7 @@ static void AddDevice(const RendererDesc* pDesc, Renderer* pRenderer)
 	}
 
 #ifdef USE_DEBUG_UTILS_EXTENSION
-	gDebugMarkerSupport = (&vkCmdBeginDebugUtilsLabelEXT) && (&vkCmdEndDebugUtilsLabelEXT) && (&vkCmdInsertDebugUtilsLabelEXT) && (&vkSetDebugUtilsObjectNameEXT);
+	gDebugMarkerSupport = (vkCmdBeginDebugUtilsLabelEXT) && (vkCmdEndDebugUtilsLabelEXT) && (vkCmdInsertDebugUtilsLabelEXT) && (vkSetDebugUtilsObjectNameEXT);
 #endif
 
 	for (uint32_t i = 0; i < gpuCount; ++i)
@@ -2663,7 +2657,8 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 		vmaCreateAllocator(&createInfo, &pRenderer->pVmaAllocator);
 	}
 
-	VkDescriptorPoolSize descriptorPoolSizes[VK_DESCRIPTOR_TYPE_MAX_ENUM] =
+
+	VkDescriptorPoolSize descriptorPoolSizes[] =
 	{
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
@@ -2676,14 +2671,14 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1024 },
 		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1 },
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 },
-	};
+        
 #ifdef VK_NV_RAY_TRACING_SPEC_VERSION
-	if (gNVRayTracingExtension)
-	{
-		descriptorPoolSizes[CONF_DESCRIPTOR_TYPE_RANGE_SIZE - 1] = { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1024 };
-	}
+        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1024 }
 #endif
-	add_descriptor_pool(pRenderer, 8192, (VkDescriptorPoolCreateFlags)0, descriptorPoolSizes, gDescriptorTypeRangeSize, &pRenderer->pDescriptorPool);
+	};
+    
+
+	add_descriptor_pool(pRenderer, 8192, (VkDescriptorPoolCreateFlags)0, descriptorPoolSizes, sizeof(descriptorPoolSizes), &pRenderer->pDescriptorPool);
 	pRenderPassMutex = (Mutex*)conf_calloc(1, sizeof(Mutex));
 	pRenderPassMutex->Init();
 	gRenderPassMap = conf_placement_new<eastl::hash_map<ThreadID, RenderPassMap> >(conf_malloc(sizeof(*gRenderPassMap)));
